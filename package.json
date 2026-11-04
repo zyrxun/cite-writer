@@ -1,14 +1,14 @@
 {
-  "name": "zotero-plugin-template",
+  "name": "zotero-cite-writer",
   "type": "module",
-  "version": "3.1.0",
-  "description": "Zotero Plugin Template",
+  "version": "0.1.0",
+  "description": "Draft literature reviews inside Zotero: sentence-level source matching, one-click [n] citations, auto-generated reference list.",
   "config": {
-    "addonName": "Zotero Plugin Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate"
+    "addonName": "Cite Writer",
+    "addonID": "cite-writer@zyxun.dev",
+    "addonRef": "citewriter",
+    "addonInstance": "CiteWriter",
+    "prefsPrefix": "extensions.zotero.citewriter"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "lint:fix": "prettier --write . && eslint . --fix",
     "release": "zotero-plugin release",
     "test": "zotero-plugin test",
+    "test:unit": "vitest run",
     "update-deps": "npm update --save"
   },
   "dependencies": {
@@ -42,6 +43,7 @@
     "mocha": "^11.7.5",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",
+    "vitest": "^5.1.0",
     "zotero-plugin-scaffold": "^0.8.2",
     "zotero-types": "^4.1.0-beta.4"
   },
