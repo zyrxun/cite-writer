@@ -6,6 +6,7 @@
 import { config } from "../../package.json";
 import { ElementProps } from "zotero-plugin-toolkit";
 import { MatchCandidate, SearchableItem } from "../matching/engine";
+import { sentenceContext } from "../matching/sentences";
 import { CitationRegistry } from "../numbering/registry";
 import { getEntryCitations, quickCopyBibliography } from "./citationFormatter";
 import { SearchSession } from "./searchSession";
@@ -34,7 +35,6 @@ interface PaneState {
   savedRange: Range | null;
   lastCandidates: MatchCandidate[];
   matching: boolean;
-  bibTimer: number | undefined;
 }
 
 const CITE_SPAN_CLASS = "cw-cite";
@@ -44,27 +44,6 @@ function make(doc: Document, props: ElementProps): HTMLElement {
     tag: "div",
     ...props,
   } as any) as HTMLElement;
-}
-
-/** Sentence context around the caret: current sentence + previous sentence. */
-function sentenceContext(
-  text: string,
-  caret: number,
-): { current: string; previous: string } {
-  const before = text.slice(0, caret);
-  const after = text.slice(caret);
-  const ends: number[] = [];
-  const re = /[.!?]+/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(before))) ends.push(m.index + m[0].length);
-  const lastEnd = ends.length ? ends[ends.length - 1] : 0;
-  const prevEnd = ends.length >= 2 ? ends[ends.length - 2] : 0;
-  const next = re.exec(after);
-  const currentEnd = next ? lastEnd + next.index + next[0].length : text.length;
-  return {
-    current: text.slice(lastEnd, currentEnd).trim(),
-    previous: text.slice(prevEnd, lastEnd).trim(),
-  };
 }
 
 export class WritingPane {
@@ -215,7 +194,6 @@ export class WritingPane {
       savedRange: null,
       lastCandidates: [],
       matching: false,
-      bibTimer: undefined,
     };
     this.setStatus(getString("cw-status-idle"));
   }
@@ -225,7 +203,6 @@ export class WritingPane {
     if (!state) return;
     this.state = null;
     if (state.debounce !== undefined) state.win.clearTimeout(state.debounce);
-    if (state.bibTimer !== undefined) state.win.clearTimeout(state.bibTimer);
     state.els.container.querySelector(".cw-root")?.remove();
   }
 
@@ -274,7 +251,12 @@ export class WritingPane {
   /** Extract current + previous sentence around the caret and match. */
   private async runMatch(): Promise<void> {
     const state = this.state;
-    if (!state || state.matching) return;
+    if (!state) return;
+    if (state.matching) {
+      // A search is in flight; retry shortly so the latest sentence still runs.
+      this.scheduleMatch(300);
+      return;
+    }
     const editor = state.els.editor;
     const sel = state.win.getSelection();
     let caret = -1;
