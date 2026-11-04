@@ -5,29 +5,51 @@
   onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window })"
 >
   <label><html:h2 data-l10n-id="pref-title"></html:h2></label>
-  <checkbox
-    id="zotero-prefpane-__addonRef__-enable"
-    preference="enable"
-    data-l10n-id="pref-enable"
-  />
-  <hbox>
-    <html:label
-      for="zotero-prefpane-__addonRef__-input"
-      data-l10n-id="pref-input"
-    ></html:label>
+
+  <checkbox id="__addonRef__-enable" data-l10n-id="pref-enable" />
+
+  <hbox align="center">
+    <label data-l10n-id="pref-style"></label>
+    <menulist id="__addonRef__-style" flex="1">
+      <menupopup />
+    </menulist>
+  </hbox>
+
+  <label data-l10n-id="pref-trigger-mode"></label>
+  <radiogroup id="__addonRef__-triggermode">
+    <radio
+      id="__addonRef__-trigger-auto"
+      value="auto"
+      data-l10n-id="pref-trigger-auto"
+    />
+    <radio
+      id="__addonRef__-trigger-manual"
+      value="manual"
+      data-l10n-id="pref-trigger-manual"
+    />
+  </radiogroup>
+
+  <hbox align="center">
+    <label data-l10n-id="pref-min-score"></label>
     <html:input
-      type="text"
-      id="zotero-prefpane-__addonRef__-input"
-      preference="input"
+      type="number"
+      id="__addonRef__-minscore"
+      min="0"
+      step="0.5"
     ></html:input>
   </hbox>
-  <hbox class="virtualized-table-container" flex="1" height="300px">
-    <html:div id="__addonRef__-table-container" />
-  </hbox>
+
+  <label data-l10n-id="pref-scope"></label>
+  <radiogroup id="__addonRef__-scope">
+    <radio
+      id="__addonRef__-scope-library"
+      value="library"
+      data-l10n-id="pref-scope-library"
+    />
+    <radio
+      id="__addonRef__-scope-collection"
+      value="collection"
+      data-l10n-id="pref-scope-collection"
+    />
+  </radiogroup>
 </groupbox>
-<vbox>
-  <html:label
-    data-l10n-id="pref-help"
-    data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'
-  ></html:label>
-</vbox>

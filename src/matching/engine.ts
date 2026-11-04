@@ -89,7 +89,10 @@ export function metadataText(item: SearchableItem): string {
     .join("\n");
 }
 
-export function channelText(item: SearchableItem, channel: ChannelName): string {
+export function channelText(
+  item: SearchableItem,
+  channel: ChannelName,
+): string {
   switch (channel) {
     case "metadata":
       return metadataText(item);
@@ -117,7 +120,6 @@ function emptyIndex(): ChannelIndex {
 export class MatchingEngine {
   private items: SearchableItem[] = [];
   private channels: Record<ChannelName, ChannelIndex>;
-  private tokenCache = new Map<number, Record<ChannelName, Token[]>>();
 
   constructor(items: SearchableItem[]) {
     this.channels = {
@@ -130,7 +132,6 @@ export class MatchingEngine {
 
   reindex(items: SearchableItem[]): void {
     this.items = items;
-    this.tokenCache.clear();
     for (const name of CHANNEL_NAMES) {
       this.channels[name] = emptyIndex();
     }
@@ -161,11 +162,16 @@ export class MatchingEngine {
    * @param sentence Current sentence (weighted double).
    * @param prevSentence Previous sentence (context, weighted single).
    */
-  rank(sentence: string, prevSentence: string, options: RankOptions = {}): MatchCandidate[] {
+  rank(
+    sentence: string,
+    prevSentence: string,
+    options: RankOptions = {},
+  ): MatchCandidate[] {
     const weights: EngineWeights = { ...DEFAULT_WEIGHTS, ...options.weights };
     const qtf = new Map<string, number>();
     for (const t of contentTokens(sentence)) qtf.set(t, (qtf.get(t) ?? 0) + 2);
-    for (const t of contentTokens(prevSentence)) qtf.set(t, (qtf.get(t) ?? 0) + 1);
+    for (const t of contentTokens(prevSentence))
+      qtf.set(t, (qtf.get(t) ?? 0) + 1);
     if (!qtf.size || !this.items.length) return [];
 
     const scores = new Float64Array(this.items.length);
@@ -205,7 +211,11 @@ export class MatchingEngine {
   /** Best verbatim snippet for the sentence across the item's channels. */
   private findSnippet(sentence: string, itemIdx: number): MatchSnippet | null {
     const item = this.items[itemIdx];
-    const segments: Array<{ channel: ChannelName; text: string; page?: string }> = [];
+    const segments: Array<{
+      channel: ChannelName;
+      text: string;
+      page?: string;
+    }> = [];
     for (const seg of item.annotationSegments) {
       segments.push({ channel: "annotations", text: seg.text, page: seg.page });
     }

@@ -7,7 +7,8 @@ const SLEEP_FULLTEXT =
   "Adolescents who slept fewer than six hours showed a measurable decline in recall accuracy during the word pair task. " +
   "Loss of rapid eye movement sleep was associated with weaker associative binding across all study conditions.";
 
-const SLEEP_ANNOTATION = "memory consolidation depends critically on sleep duration";
+const SLEEP_ANNOTATION =
+  "memory consolidation depends critically on sleep duration";
 
 function item(partial: Partial<SearchableItem>): SearchableItem {
   return {
@@ -43,11 +44,11 @@ function fixtures(): SearchableItem[] {
       title: "Soil Carbon Sequestration in Tropical Agroforestry Systems",
       creators: "Amina Diallo",
       year: "2020",
-      abstract: "Agroforestry plots store substantially more soil organic carbon than monoculture fields.",
+      abstract:
+        "Agroforestry plots store substantially more soil organic carbon than monoculture fields.",
       fulltextSegments: [
         {
-          text:
-            "Deep-rooted trees pump carbon below the surface layer, where turnover is slow and microbial activity is limited by temperature.",
+          text: "Deep-rooted trees pump carbon below the surface layer, where turnover is slow and microbial activity is limited by temperature.",
         },
       ],
     }),
@@ -57,11 +58,11 @@ function fixtures(): SearchableItem[] {
       title: "Caffeine Consumption and Sleep Quality in University Athletes",
       creators: "Petr Novak",
       year: "2021",
-      abstract: "Evening caffeine intake degrades sleep quality markers in trained athletes.",
+      abstract:
+        "Evening caffeine intake degrades sleep quality markers in trained athletes.",
       fulltextSegments: [
         {
-          text:
-            "Athletes who consumed caffeine reported worse sleep quality before evening competition than on placebo nights.",
+          text: "Athletes who consumed caffeine reported worse sleep quality before evening competition than on placebo nights.",
         },
       ],
     }),
@@ -71,7 +72,8 @@ function fixtures(): SearchableItem[] {
       title: "Dream Recall and Affect in Young Adults",
       creators: "Sofia Bianchi",
       year: "2018",
-      abstract: "Survey evidence links poorer dream recall to elevated daytime affect variability in young adults.",
+      abstract:
+        "Survey evidence links poorer dream recall to elevated daytime affect variability in young adults.",
       // No PDF/fulltext: metadata-only item.
     }),
   ];
@@ -86,7 +88,9 @@ describe("MatchingEngine", () => {
     expect(candidates.length).toBeGreaterThan(0);
     expect(candidates[0].item.key).toBe("SLEEP2019");
     expect(candidates[0].snippet.channel).toBe("fulltext");
-    expect(candidates[0].snippet.wordCount).toBeGreaterThanOrEqual(SNIPPET_MIN_WORDS);
+    expect(candidates[0].snippet.wordCount).toBeGreaterThanOrEqual(
+      SNIPPET_MIN_WORDS,
+    );
     expect(candidates[0].snippet.text).toContain("fewer than six hours");
   });
 
@@ -129,7 +133,8 @@ describe("MatchingEngine", () => {
 
   it("uses the previous sentence as context without letting it dominate", () => {
     const engine = new MatchingEngine(fixtures());
-    const prev = "Sleep loss studies typically measure recall after a fixed retention interval.";
+    const prev =
+      "Sleep loss studies typically measure recall after a fixed retention interval.";
     const sentence =
       "Adolescents who slept fewer than six hours showed a measurable decline in recall accuracy in this design.";
     const [top] = engine.rank(sentence, prev);
@@ -141,14 +146,18 @@ describe("MatchingEngine", () => {
     const sentence =
       "When participants slept fewer than six hours showed a measurable decline in recall accuracy, even after a single night.";
     const all = engine.rank(sentence, "");
-    expect(engine.rank(sentence, "", { minScore: all[0].score + 1 })).toEqual([]);
+    expect(engine.rank(sentence, "", { minScore: all[0].score + 1 })).toEqual(
+      [],
+    );
     const limited = engine.rank(sentence, "", { maxCandidates: 1 });
     expect(limited).toHaveLength(1);
     expect(limited[0].item.key).toBe("SLEEP2019");
   });
 
   it("handles an empty corpus and empty sentences", () => {
-    expect(new MatchingEngine([]).rank("anything at all here now", "")).toEqual([]);
+    expect(new MatchingEngine([]).rank("anything at all here now", "")).toEqual(
+      [],
+    );
     const engine = new MatchingEngine(fixtures());
     expect(engine.rank("", "")).toEqual([]);
     expect(engine.rank("the of and to a", "")).toEqual([]);

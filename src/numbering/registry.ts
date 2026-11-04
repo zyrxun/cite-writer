@@ -50,7 +50,11 @@ export class CitationRegistry {
    * Insert a citation marker into the sequence. Returns the source's number.
    * Inserting an already-known anchorId is a no-op (idempotent).
    */
-  insert(itemKey: string, anchorId: string, beforeAnchorId?: string | null): number {
+  insert(
+    itemKey: string,
+    anchorId: string,
+    beforeAnchorId?: string | null,
+  ): number {
     if (this.instances.some((i) => i.anchorId === anchorId)) {
       return this.numberFor(itemKey) ?? 1;
     }
@@ -83,7 +87,8 @@ export class CitationRegistry {
 
   numberFor(itemKey: string): number | undefined {
     for (const inst of this.instances) {
-      if (inst.itemKey === itemKey) return numbersFromSequence(this.instances).get(itemKey);
+      if (inst.itemKey === itemKey)
+        return numbersFromSequence(this.instances).get(itemKey);
     }
     return undefined;
   }
@@ -95,7 +100,11 @@ export class CitationRegistry {
       counts.set(inst.itemKey, (counts.get(inst.itemKey) ?? 0) + 1);
     }
     return [...numbers.entries()]
-      .map(([itemKey, number]) => ({ itemKey, number, count: counts.get(itemKey) ?? 1 }))
+      .map(([itemKey, number]) => ({
+        itemKey,
+        number,
+        count: counts.get(itemKey) ?? 1,
+      }))
       .sort((a, b) => a.number - b.number);
   }
 }

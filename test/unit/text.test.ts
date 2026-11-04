@@ -10,7 +10,12 @@ import {
 describe("tokenize", () => {
   it("lowercases and keeps offsets", () => {
     const tokens = tokenize("Hello, World! It's 2026.");
-    expect(tokens.map((t) => t.norm)).toEqual(["hello", "world", "it's", "2026"]);
+    expect(tokens.map((t) => t.norm)).toEqual([
+      "hello",
+      "world",
+      "it's",
+      "2026",
+    ]);
     const s = "Hello, World! It's 2026.";
     for (const t of tokens) {
       expect(s.slice(t.start, t.end)).toMatch(/^[\p{L}\p{N}'’-]+$/u);
@@ -18,7 +23,9 @@ describe("tokenize", () => {
   });
 
   it("filters stopwords in contentTokens", () => {
-    const tokens = contentTokens("The decline of the DECLINE in recall accuracy");
+    const tokens = contentTokens(
+      "The decline of the DECLINE in recall accuracy",
+    );
     expect(tokens).toEqual(["decline", "decline", "recall", "accuracy"]);
     expect(STOPWORDS.has("the")).toBe(true);
   });
@@ -52,7 +59,8 @@ describe("findSharedSnippet", () => {
   });
 
   it("prefers the longest span when several overlap", () => {
-    const longDoc = doc + " in recall accuracy during the word pair task indeed.";
+    const longDoc =
+      doc + " in recall accuracy during the word pair task indeed.";
     const match = findSharedSnippet(
       "They slept fewer than six hours showed a measurable decline in recall accuracy during the word pair task indeed.",
       longDoc,

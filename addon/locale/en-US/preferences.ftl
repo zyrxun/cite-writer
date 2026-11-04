@@ -1,5 +1,10 @@
-pref-title = Addon Template Example
-pref-enable =
-    .label = Enable
-pref-input = Input
-pref-help = { $name } Build { $version } { $time }
+pref-title = Cite Writer Settings
+pref-enable = Enable Cite Writer
+pref-style = Citation style (reference list)
+pref-trigger-mode = Trigger mode
+pref-trigger-auto = Auto (suggest while typing)
+pref-trigger-manual = Manual (button / Ctrl+Alt+C)
+pref-min-score = Minimum match score
+pref-scope = Search scope
+pref-scope-library = Whole user library
+pref-scope-collection = Currently selected collection

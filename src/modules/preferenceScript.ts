@@ -1,131 +1,98 @@
-import { config } from "../../package.json";
-import { getString } from "../utils/locale";
+// Wiring for the plugin preference pane: populate the CSL style picker,
+// mirror current pref values into the controls, and persist changes.
 
-export async function registerPrefsScripts(_window: Window) {
-  // This function is called when the prefs window is opened
-  // See addon/content/preferences.xhtml onpaneload
+import { config } from "../../package.json";
+import { getVisibleStyles } from "./citationFormatter";
+import { getPref, setPref } from "../utils/prefs";
+import { logError } from "../utils/error";
+
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+export async function registerPrefsScripts(window: Window) {
   if (!addon.data.prefs) {
     addon.data.prefs = {
-      window: _window,
-      columns: [
-        {
-          dataKey: "title",
-          label: getString("prefs-table-title"),
-          fixedWidth: true,
-          width: 100,
-        },
-        {
-          dataKey: "detail",
-          label: getString("prefs-table-detail"),
-        },
-      ],
-      rows: [
-        {
-          title: "Orange",
-          detail: "It's juicy",
-        },
-        {
-          title: "Banana",
-          detail: "It's sweet",
-        },
-        {
-          title: "Apple",
-          detail: "I mean the fruit APPLE",
-        },
-      ],
+      window,
+      columns: [],
+      rows: [],
     };
   } else {
-    addon.data.prefs.window = _window;
+    addon.data.prefs.window = window;
   }
-  updatePrefsUI();
-  bindPrefEvents();
+  const doc = window.document;
+  try {
+    initStyleMenulist(doc);
+    initRadiogroup(
+      doc,
+      "triggerMode",
+      `${config.addonRef}-triggermode`,
+      (value) => setPref("triggerMode", value),
+    );
+    initRadiogroup(doc, "scope", `${config.addonRef}-scope`, (value) =>
+      setPref("scope", value),
+    );
+    initNumberInput(doc);
+    initEnableCheckbox(doc);
+  } catch (e) {
+    logError(e);
+  }
 }
 
-async function updatePrefsUI() {
-  // You can initialize some UI elements on prefs window
-  // with addon.data.prefs.window.document
-  // Or bind some events to the elements
-  const renderLock = ztoolkit.getGlobal("Zotero").Promise.defer();
-  if (addon.data.prefs?.window == undefined) return;
-  const tableHelper = new ztoolkit.VirtualizedTable(addon.data.prefs?.window)
-    .setContainerId(`${config.addonRef}-table-container`)
-    .setProp({
-      id: `${config.addonRef}-prefs-table`,
-      // Do not use setLocale, as it modifies the Zotero.Intl.strings
-      // Set locales directly to columns
-      columns: addon.data.prefs?.columns,
-      showHeader: true,
-      multiSelect: true,
-      staticColumns: true,
-      disableFontSizeScaling: true,
-    })
-    .setProp("getRowCount", () => addon.data.prefs?.rows.length || 0)
-    .setProp(
-      "getRowData",
-      (index) =>
-        addon.data.prefs?.rows[index] || {
-          title: "no data",
-          detail: "no data",
-        },
-    )
-    // Show a progress window when selection changes
-    .setProp("onSelectionChange", (selection) => {
-      new ztoolkit.ProgressWindow(config.addonName)
-        .createLine({
-          text: `Selected line: ${addon.data.prefs?.rows
-            .filter((v, i) => selection.isSelected(i))
-            .map((row) => row.title)
-            .join(",")}`,
-          progress: 100,
-        })
-        .show();
-    })
-    // When pressing delete, delete selected line and refresh table.
-    // Returning false to prevent default event.
-    .setProp("onKeyDown", (event: KeyboardEvent) => {
-      if (event.key == "Delete" || (Zotero.isMac && event.key == "Backspace")) {
-        addon.data.prefs!.rows =
-          addon.data.prefs?.rows.filter(
-            (v, i) => !tableHelper.treeInstance.selection.isSelected(i),
-          ) || [];
-        tableHelper.render();
-        return false;
-      }
-      return true;
-    })
-    // For find-as-you-type
-    .setProp(
-      "getRowString",
-      (index) => addon.data.prefs?.rows[index].title || "",
-    )
-    // Render the table.
-    .render(-1, () => {
-      renderLock.resolve();
-    });
-  await renderLock.promise;
-  ztoolkit.log("Preference table rendered!");
+/** CSL style menulist, populated from Zotero.Styles. */
+function initStyleMenulist(doc: Document): void {
+  const menulist = doc.getElementById(
+    `${config.addonRef}-style`,
+  ) as XUL.MenuList | null;
+  if (!menulist) return;
+  const popup = doc.createElementNS(XUL_NS, "menupopup");
+  for (const style of getVisibleStyles()) {
+    const menuitem = doc.createElementNS(XUL_NS, "menuitem");
+    menuitem.setAttribute("label", style.name);
+    menuitem.setAttribute("value", style.id);
+    popup.appendChild(menuitem);
+  }
+  menulist.appendChild(popup);
+  const current = String(getPref("style"));
+  if (popup.querySelector(`menuitem[value="${current}"]`)) {
+    menulist.value = current;
+  }
+  menulist.addEventListener("command", () => {
+    if (menulist.value) setPref("style", menulist.value);
+  });
 }
 
-function bindPrefEvents() {
-  addon.data
-    .prefs!.window.document?.querySelector(
-      `#zotero-prefpane-${config.addonRef}-enable`,
-    )
-    ?.addEventListener("command", (e: Event) => {
-      ztoolkit.log(e);
-      addon.data.prefs!.window.alert(
-        `Successfully changed to ${(e.target as XUL.Checkbox).checked}!`,
-      );
-    });
+function initRadiogroup(
+  doc: Document,
+  prefValue: string,
+  elementId: string,
+  setter: (value: string) => void,
+): void {
+  const group = doc.getElementById(elementId) as XUL.RadioGroup | null;
+  if (!group) return;
+  group.value = String(getPref(prefValue as "scope"));
+  group.addEventListener("command", () => {
+    if (group.value) setter(group.value);
+  });
+}
 
-  addon.data
-    .prefs!.window.document?.querySelector(
-      `#zotero-prefpane-${config.addonRef}-input`,
-    )
-    ?.addEventListener("change", (e: Event) => {
-      ztoolkit.log(e);
-      addon.data.prefs!.window.alert(
-        `Successfully changed to ${(e.target as HTMLInputElement).value}!`,
-      );
-    });
+function initNumberInput(doc: Document): void {
+  const input = doc.getElementById(
+    `${config.addonRef}-minscore`,
+  ) as HTMLInputElement | null;
+  if (!input) return;
+  input.value = String(getPref("minScore"));
+  input.addEventListener("change", () => {
+    const value = Number(input.value);
+    if (!Number.isNaN(value) && value >= 0) setPref("minScore", value);
+  });
+}
+
+function initEnableCheckbox(doc: Document): void {
+  const checkbox = doc.getElementById(
+    `${config.addonRef}-enable`,
+  ) as XUL.Checkbox | null;
+  if (!checkbox) return;
+  checkbox.checked = getPref("enable") !== false;
+  checkbox.addEventListener("command", () => {
+    setPref("enable", checkbox.checked);
+  });
 }
